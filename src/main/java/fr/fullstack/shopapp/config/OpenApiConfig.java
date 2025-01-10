@@ -10,7 +10,7 @@ public class OpenApiConfig {
     @Bean
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
-                .group("public-api")
+                .group("shopapp")
                 .pathsToMatch("/api/**")
                 .build();
     }
