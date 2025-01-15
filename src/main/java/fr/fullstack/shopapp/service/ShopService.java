@@ -33,6 +33,7 @@ public class ShopService {
             // Refresh the entity after the save. Otherwise, @Formula does not work.
             em.flush();
             em.refresh(newShop);
+            // Index the entity into idx_shops in ElasticSearch
             shopElasticRepository.save(newShop);
             return newShop;
         } catch (Exception e) {
@@ -61,6 +62,7 @@ public class ShopService {
     }
 
     public Page<Shop> getShopList(
+            Optional<String> name,
             Optional<String> sortBy,
             Optional<Boolean> inVacations,
             Optional<String> createdBefore,
@@ -79,11 +81,12 @@ public class ShopService {
             }
         }
 
-        // FILTERS
-        Page<Shop> shopList = getShopListWithFilter(inVacations, createdBefore, createdAfter, pageable);
+        // FILTERS AND SEARCH
+        Page<Shop> shopList = getShopListWithFilter(name, inVacations, createdBefore, createdAfter, pageable);
         if (shopList != null) {
             return shopList;
         }
+
 
         // NONE
         return shopRepository.findByOrderByIdAsc(pageable);
@@ -118,12 +121,24 @@ public class ShopService {
     }
 
     private Page<Shop> getShopListWithFilter(
+            Optional<String> name,
             Optional<Boolean> inVacations,
             Optional<String> createdAfter,
             Optional<String> createdBefore,
             Pageable pageable
     ) {
-        if (inVacations.isPresent() && createdBefore.isPresent() && createdAfter.isPresent()) {
+
+        if (name.isPresent()) {
+            LocalDate after; LocalDate before;
+            after = createdAfter.map(LocalDate::parse).orElse(LocalDate.EPOCH);
+            before = createdBefore.map(LocalDate::parse).orElse(LocalDate.EPOCH.plusYears(90));
+            if (inVacations.isEmpty()) {
+                inVacations = Optional.of(false);
+            }
+            return shopElasticRepository.findAllByNameContainingAndCreatedAtAfterAndCreatedAtBeforeAndInVacationsEquals(name.get(), after, before, inVacations.get(), pageable);
+//            return shopElasticRepository.findAllByNameContaining(name.get(), pageable);
+        }
+                if (inVacations.isPresent() && createdBefore.isPresent() && createdAfter.isPresent()) {
             return shopRepository.findByInVacationsAndCreatedAtGreaterThanAndCreatedAtLessThan(
                     inVacations.get(),
                     LocalDate.parse(createdAfter.get()),

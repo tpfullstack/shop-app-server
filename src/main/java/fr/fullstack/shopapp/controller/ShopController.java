@@ -69,13 +69,14 @@ public class ShopController {
     @GetMapping
     public ResponseEntity<Page<Shop>> getAllShops(
             @ParameterObject Pageable pageable,
+            @Parameter(description = "Plain text search on name of the shop") @RequestParam Optional<String> search,
             @Parameter(description = "Sort shops by field (e.g., 'name', 'nbProducts', 'createdAt')") @RequestParam Optional<String> sortBy,
             @Parameter(description = "Filter shops based on vacation status") @RequestParam Optional<Boolean> inVacations,
             @Parameter(description = "Filter shops created after this date (YYYY-MM-DD)") @RequestParam Optional<String> createdAfter,
             @Parameter(description = "Filter shops created before this date (YYYY-MM-DD)") @RequestParam Optional<String> createdBefore) {
 
         return ResponseEntity.ok(
-                service.getShopList(sortBy, inVacations, createdAfter, createdBefore, pageable)
+                service.getShopList(search, sortBy, inVacations, createdAfter, createdBefore, pageable)
         );
     }
 

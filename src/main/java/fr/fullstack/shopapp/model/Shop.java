@@ -31,6 +31,7 @@ import java.util.List;
 public class Shop {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
+    @Field(type = FieldType.Date)
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate createdAt;
 
