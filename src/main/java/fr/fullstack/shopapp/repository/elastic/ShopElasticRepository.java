@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
+import java.time.LocalDate;
+
 public interface ShopElasticRepository extends ElasticsearchRepository<Shop, Long> {
-    Page<Shop> findAllByNameContaining(String name, Pageable pageable);
+    Page<Shop> findAllByNameContainingAndCreatedAtAfterAndCreatedAtBeforeAndInVacationsEquals(String name, LocalDate after, LocalDate before, Boolean inVacations, Pageable pageable);
 }
