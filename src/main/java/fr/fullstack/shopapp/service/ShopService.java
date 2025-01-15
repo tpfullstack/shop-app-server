@@ -1,5 +1,6 @@
 package fr.fullstack.shopapp.service;
 
+import fr.fullstack.shopapp.model.OpeningHoursShop;
 import fr.fullstack.shopapp.model.Product;
 import fr.fullstack.shopapp.model.Shop;
 import fr.fullstack.shopapp.repository.elastic.ShopElasticRepository;
@@ -13,8 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ShopService {
@@ -28,6 +32,7 @@ public class ShopService {
 
     @Transactional
     public Shop createShop(Shop shop) throws Exception {
+        checkForOverlap(shop.getOpeningHours());
         try {
             Shop newShop = shopRepository.save(shop);
             // Refresh the entity after the save. Otherwise, @Formula does not work.
@@ -175,12 +180,44 @@ public class ShopService {
             );
         }
 
-        if (createdAfter.isPresent()) {
-            return shopRepository.findByCreatedAtGreaterThan(
-                    LocalDate.parse(createdAfter.get()), pageable
-            );
-        }
+        return createdAfter.map(s -> shopRepository.findByCreatedAtGreaterThan(
+                LocalDate.parse(s), pageable
+        )).orElse(null);
 
-        return null;
     }
+
+    private void validateOpeningHours(List<OpeningHoursShop> openingHours) {
+        // Regrouper les horaires par jour
+        Map<Long, List<OpeningHoursShop>> openingHoursByDay = openingHours.stream()
+                .collect(Collectors.groupingBy(OpeningHoursShop::getDay));
+
+        // Vérifier les chevauchements pour chaque jour
+        openingHoursByDay.values().forEach(this::checkForOverlap);
+    }
+
+    private void checkForOverlap(List<OpeningHoursShop> dayOpeningHours) {
+        // Trier les horaires par heure d'ouverture pour simplifier la vérification des chevauchements
+        List<OpeningHoursShop> sortedHours = dayOpeningHours.stream()
+                .sorted(Comparator.comparing(OpeningHoursShop::getOpenAt))
+                .toList();
+
+        // Vérifier uniquement les horaires consécutifs
+        for (int i = 0; i < sortedHours.size() - 1; i++) {
+            OpeningHoursShop current = sortedHours.get(i);
+            OpeningHoursShop next = sortedHours.get(i + 1);
+
+            if (isOverlapping(current, next)) {
+                throw new IllegalArgumentException(
+                        String.format("Les horaires d'ouverture se chevauchent pour le jour %d : %s et %s",
+                                current.getDay(), current, next)
+                );
+            }
+        }
+    }
+
+    private boolean isOverlapping(OpeningHoursShop hours1, OpeningHoursShop hours2) {
+        // Un chevauchement existe si l'heure de fermeture du premier dépasse ou touche l'heure d'ouverture du second
+        return !hours1.getCloseAt().isBefore(hours2.getOpenAt());
+    }
+
 }
