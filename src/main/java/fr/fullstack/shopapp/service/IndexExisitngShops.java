@@ -7,10 +7,12 @@ import fr.fullstack.shopapp.repository.elastic.ShopElasticRepository;
 import fr.fullstack.shopapp.repository.jpa.ShopRepository;
 import fr.fullstack.shopapp.repository.jpa.SyncStatusRepository;
 import jakarta.annotation.PostConstruct;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class IndexExisitngShops {
@@ -34,13 +36,20 @@ public class IndexExisitngShops {
             System.out.println("Synchronization has already been completed.");
             return;
         }
-        List<Shop> products = shopRepository.findAll();
-        shopElasticRepository.saveAll(products);
+
+        Page<Shop> shops = shopService.getShopList(Optional.empty(), Optional.empty(), Optional.empty(),Optional.empty(), Optional.empty(), Pageable.unpaged());
+        shops.forEach(shop -> {
+            try {
+                shopService.createShop(shop);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
 
         SyncStatus status = new SyncStatus();
         status.setSyncCompleted(true);
         syncStatusRepository.save(status);
 
-        System.out.println("Successfully synced " + products.size() + " products to Elasticsearch.");
+        System.out.println("Successfully synced " + shops + " shops to Elasticsearch.");
     }
 }
