@@ -33,7 +33,7 @@ public class ShopService {
 
     @Transactional
     public Shop createShop(Shop shop) throws Exception {
-        checkForOverlap(shop.getOpeningHours());
+        validateOpeningHours(shop.getOpeningHours());
         try {
             Shop newShop = shopRepository.save(shop);
             // Refresh the entity after the save. Otherwise, @Formula does not work.
