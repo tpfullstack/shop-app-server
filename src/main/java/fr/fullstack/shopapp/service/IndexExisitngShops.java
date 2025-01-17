@@ -9,6 +9,8 @@ import fr.fullstack.shopapp.repository.jpa.SyncStatusRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.util.Optional;
 @Service
 public class IndexExisitngShops {
 
+    private static final Logger log = LoggerFactory.getLogger(IndexExisitngShops.class);
     @PersistenceContext
     EntityManager em;
 
@@ -37,7 +40,7 @@ public class IndexExisitngShops {
     public void syncDatabaseToElasticsearch() {
         // Check if synchronization has already been completed
         if (syncStatusRepository.existsBySyncCompletedTrue()) {
-            System.out.println("Synchronization has already been completed.");
+            IndexExisitngShops.log.info("Synchronization has already been completed.");
             return;
         }
 
@@ -54,6 +57,6 @@ public class IndexExisitngShops {
         status.setSyncCompleted(true);
         syncStatusRepository.save(status);
 
-        System.out.println("Successfully synced " + shops + " shops to Elasticsearch.");
+        IndexExisitngShops.log.info("Successfully synced " + shops + " shops to Elasticsearch.");
     }
 }

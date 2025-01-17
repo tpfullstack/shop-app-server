@@ -54,6 +54,8 @@ public class ShopService {
             // delete nested relations with products
             deleteNestedRelations(shop);
             shopRepository.deleteById(id);
+            // Supprimer de l'index après avoir supprimé de la base de données
+            shopElasticRepository.deleteById(id);
         } catch (Exception e) {
             throw new Exception(e.getMessage());
         }
