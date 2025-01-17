@@ -227,4 +227,13 @@ public class ShopService {
         return !hours1.getCloseAt().isBefore(hours2.getOpenAt());
     }
 
+    @Transactional
+    public void syncExistingShopsToElasticsearch(Shop shop) throws Exception {
+            Shop toIndex = shopRepository.save(shop);
+            // Refresh the entity after the save. Otherwise, @Formula does not work.
+            em.flush();
+            em.refresh(toIndex);
+            // Index the entity into idx_shops in ElasticSearch
+            shopElasticRepository.save(toIndex);
+    }
 }

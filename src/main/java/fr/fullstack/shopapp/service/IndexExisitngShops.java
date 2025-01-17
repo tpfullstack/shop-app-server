@@ -7,15 +7,19 @@ import fr.fullstack.shopapp.repository.elastic.ShopElasticRepository;
 import fr.fullstack.shopapp.repository.jpa.ShopRepository;
 import fr.fullstack.shopapp.repository.jpa.SyncStatusRepository;
 import jakarta.annotation.PostConstruct;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
 public class IndexExisitngShops {
+
+    @PersistenceContext
+    EntityManager em;
 
     private final ShopService shopService;
     private final ShopElasticRepository shopElasticRepository;
@@ -40,7 +44,7 @@ public class IndexExisitngShops {
         Page<Shop> shops = shopService.getShopList(Optional.empty(), Optional.empty(), Optional.empty(),Optional.empty(), Optional.empty(), Pageable.unpaged());
         shops.forEach(shop -> {
             try {
-                shopService.createShop(shop);
+                shopService.syncExistingShopsToElasticsearch(shop);
             } catch (Exception e) {
                 e.printStackTrace();
             }
