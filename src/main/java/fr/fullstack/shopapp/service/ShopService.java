@@ -5,6 +5,7 @@ import fr.fullstack.shopapp.model.Product;
 import fr.fullstack.shopapp.model.Shop;
 import fr.fullstack.shopapp.repository.elastic.ShopElasticRepository;
 import fr.fullstack.shopapp.repository.jpa.ShopRepository;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,7 +33,7 @@ public class ShopService {
 
     @Transactional
     public Shop createShop(Shop shop) throws Exception {
-        checkForOverlap(shop.getOpeningHours());
+        validateOpeningHours(shop.getOpeningHours());
         try {
             Shop newShop = shopRepository.save(shop);
             // Refresh the entity after the save. Otherwise, @Formula does not work.
@@ -192,10 +193,16 @@ public class ShopService {
                 .collect(Collectors.groupingBy(OpeningHoursShop::getDay));
 
         // Vérifier les chevauchements pour chaque jour
-        openingHoursByDay.values().forEach(this::checkForOverlap);
+        openingHoursByDay.values().forEach(hours -> {
+                try {
+                    checkForOverlap(hours);
+                } catch (BadRequestException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
-    private void checkForOverlap(List<OpeningHoursShop> dayOpeningHours) {
+    private void checkForOverlap(List<OpeningHoursShop> dayOpeningHours) throws BadRequestException {
         // Trier les horaires par heure d'ouverture pour simplifier la vérification des chevauchements
         List<OpeningHoursShop> sortedHours = dayOpeningHours.stream()
                 .sorted(Comparator.comparing(OpeningHoursShop::getOpenAt))
@@ -207,7 +214,7 @@ public class ShopService {
             OpeningHoursShop next = sortedHours.get(i + 1);
 
             if (isOverlapping(current, next)) {
-                throw new IllegalArgumentException(
+                throw new BadRequestException(
                         String.format("Les horaires d'ouverture se chevauchent pour le jour %d : %s et %s",
                                 current.getDay(), current, next)
                 );
