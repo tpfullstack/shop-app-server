@@ -11,11 +11,16 @@ import org.elasticsearch.client.RestClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.elasticsearch.core.convert.ElasticsearchCustomConversions;
+import org.springframework.beans.factory.annotation.Value;
+
 
 import java.util.Arrays;
 
 @Configuration
 public class ElasticConfig {
+
+    @Value("${elastic.host}")
+    private String elastichost;
 
     @Bean
     public ObjectMapper objectMapper() {
@@ -36,7 +41,7 @@ public class ElasticConfig {
     @Bean
     public ElasticsearchClient elasticsearchClient() {
         RestClient restClient = RestClient.builder(
-                new HttpHost("localhost", 9200, "http")
+                new HttpHost(elastichost, 9200, "http")
         ).build();
 
         RestClientTransport transport = new RestClientTransport(
