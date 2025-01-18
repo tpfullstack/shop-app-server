@@ -2,15 +2,15 @@ package fr.fullstack.shopapp.service;
 
 import fr.fullstack.shopapp.model.LocalizedProduct;
 import fr.fullstack.shopapp.model.Product;
-import fr.fullstack.shopapp.repository.ProductRepository;
+import fr.fullstack.shopapp.repository.jpa.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.util.Optional;
 
 @Service
